@@ -131,66 +131,58 @@ const editPost = async (req, res, next) => {
     //get oldPost from database
     const oldPost = await Post.findById(postId);
     if (req.user.id == oldPost.creator) {
-      return next(
-        new HttpError("You are not authorized to edit this post", 403)
-      );
-    }
-
-    if (!req.files) {
-      updatedPost = await Post.findByIdAndUpdate(
-        postId,
-        { title, category, description },
-        { new: true }
-      );
-    } else {
-      const oldPost = await Post.findById(postId);
-      //delete old thumbnail from upload
-      fs.unlink(
-        path.join(__dirname, "..", "uploads", oldPost.thumbnail),
-        async (err) => {
-          if (err) {
-            return next(new HttpError(err));
+      if (!req.files) {
+        updatedPost = await Post.findByIdAndUpdate(
+          postId,
+          { title, category, description },
+          { new: true }
+        );
+      } else {
+        //delete old thumbnail from upload
+        fs.unlink(
+          path.join(__dirname, "..", "uploads", oldPost.thumbnail),
+          async (err) => {
+            if (err) {
+              return next(new HttpError(err));
+            }
           }
+        );
+        //upload new thumbnail
+        const { thumbnail } = req.files;
+
+        //check file size
+        if (thumbnail.size > 2000000) {
+          return next(new HttpError("Thumbnail too big, Max is 2Mb"));
         }
-      );
 
-      //upload new thumbnail
-      const { thumbnail } = req.files;
-
-      //check file size
-      if (thumbnail.size > 2000000) {
-        return next(new HttpError("Thumbnail too big, Max is 2Mb"));
-      }
-
-      fileName = thumbnail.name;
-      let splittedFilename = fileName.split(".");
-      newFilename =
-        splittedFilename[0] +
-        uuid() +
-        "." +
-        splittedFilename[splittedFilename.length - 1];
-      thumbnail.mv(
-        path.join(__dirname, "..", "uploads", newFilename),
-        async (err) => {
-          if (err) {
-            return next(new HttpError(err));
+        fileName = thumbnail.name;
+        let splittedFilename = fileName.split(".");
+        newFilename =
+          splittedFilename[0] +
+          uuid() +
+          "." +
+          splittedFilename[splittedFilename.length - 1];
+        thumbnail.mv(
+          path.join(__dirname, "..", "uploads", newFilename),
+          async (err) => {
+            if (err) {
+              return next(new HttpError(err));
+            }
           }
-
-          updatedPost = await Post.findByIdAndUpdate(
-            postId,
-            { title, category, description, thumbnail: newFilename },
-            { new: true }
-          );
-        }
-      );
-    }
-     //File upload complted, update post
-     if (!updatedPost) {
-        return next(new HttpError("Couldn't update post", 400));
+        );
+        updatedPost = await Post.findByIdAndUpdate(
+          postId,
+          { title, category, description, thumbnail: newFilename },
+          { new: true }
+        );
       }
+    }
+    //File upload completed, update post
+    if (!updatedPost) {
+      return next(new HttpError("Couldn't update post", 400));
+    }
 
     res.status(200).json(updatedPost);
-
   } catch (error) {
     return next(new HttpError(error));
   }
