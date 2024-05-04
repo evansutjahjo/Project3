@@ -11,27 +11,9 @@ const postRoutes = require('./routes/postRoutes')
 
 const app = express();
 
-const allowedOrigins = [
-  'https://wb-frontend-one.vercel.app',
-  'http://localhost:3000'
-];
-
-app.use(cors({
-
-  origin: function (origin,callback){
-    if (!origin || allowedOrigins.includes(origin)) {
-      console.log ('request allowed', true);
-    } else {
-      console.log ('request denied', true);
-      callback(new Error('Not allowed by CORS'));
-    }
-  }, credentials: true
-}));
-
-
 app.use(express.json({extended:true}))
 app.use(express.urlencoded({extended:true}))
-// app.use(cors({credentials:true, origin: "http://localhost:3000"}))
+app.use(cors({credentials:true, origin: "http://localhost:3000"}))
 app.use(upload())
 app.use('/uploads', express.static(__dirname + '/uploads'))
 
