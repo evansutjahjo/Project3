@@ -11,7 +11,9 @@ const Posts = () => {
     const fetchPosts = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(`${process.env.REACT_APP_URL}/posts`)
+        var url = `${process.env.REACT_APP_URL}/posts`
+        console.log(url)
+        const response = await axios.get(url)
         setPosts(response?.data)
       } catch (err) {
         console.log(err)
